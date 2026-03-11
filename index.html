@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caméra</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+    h1 { font-size: 1.4rem; opacity: 0.7; }
+    #video {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 16px;
+      border: 2px solid #333;
+      display: none;
+    }
+    #canvas { display: none; }
+    #snapshot {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 16px;
+      border: 2px solid #555;
+      display: none;
+    }
+    .btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    button {
+      padding: 12px 28px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.96); }
+    #btnStart { background: #4ade80; color: #000; }
+    #btnSnap  { background: #60a5fa; color: #000; display: none; }
+    #btnSwitch{ background: #f59e0b; color: #000; display: none; }
+    #btnDl    { background: #a78bfa; color: #000; display: none; }
+    #msg { font-size: 0.9rem; opacity: 0.5; text-align: center; padding: 0 20px; }
+  </style>
+</head>
+<body>
+  <h1>📷 Accès Caméra</h1>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <img id="snapshot" alt="Photo prise" />
+  <div class="btns">
+    <button id="btnStart">Activer la caméra</button>
+    <button id="btnSnap">📸 Prendre une photo</button>
+    <button id="btnSwitch">🔄 Changer caméra</button>
+    <button id="btnDl">⬇️ Télécharger</button>
+  </div>
+  <p id="msg">Cliquez sur "Activer la caméra" pour commencer</p>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const snapshot = document.getElementById('snapshot');
+    const btnStart = document.getElementById('btnStart');
+    const btnSnap = document.getElementById('btnSnap');
+    const btnSwitch = document.getElementById('btnSwitch');
+    const btnDl = document.getElementById('btnDl');
+    const msg = document.getElementById('msg');
+
+    let stream = null;
+    let facingMode = 'user'; // front camera by default
+
+    async function startCamera() {
+      try {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode },
+          audio: false
+        });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        btnStart.style.display = 'none';
+        btnSnap.style.display = 'inline-block';
+        btnSwitch.style.display = 'inline-block';
+        msg.textContent = 'Caméra active ✅';
+      } catch (e) {
+        msg.textContent = '❌ Permission refusée ou caméra indisponible.';
+      }
+    }
+
+    btnStart.addEventListener('click', startCamera);
+
+    btnSwitch.addEventListener('click', () => {
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+      startCamera();
+    });
+
+    btnSnap.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      snapshot.src = dataUrl;
+      snapshot.style.display = 'block';
+      btnDl.style.display = 'inline-block';
+      msg.textContent = 'Photo prise 📸';
+    });
+
+    btnDl.addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = snapshot.src;
+      a.download = 'photo.png';
+      a.click();
+    });
+  </script>
+</body>
+</html>
